@@ -3,7 +3,7 @@ import inspect
 from skimage import exposure, feature, filters, measure, morphology, \
                     restoration, segmentation, transform, util, data, color
 from timeit import default_timer
-
+import pandas as pd
 
 def only_one_nondefault(args):
     """
@@ -46,9 +46,10 @@ def run_benchmark(im, module_list=[color, exposure, feature, filters, measure,
                 print('error ', function[0])
     return times
 
+l1 = 1000
+l2 = 4000
 
-
-im_uint8 = data.binary_blobs(length=1000, volume_fraction=0.3).astype(np.uint8)
+im_uint8 = data.binary_blobs(length=l1, volume_fraction=0.3).astype(np.uint8)
 im_float = im_uint8.astype(np.float)
 
 skip_functions = ['hough_ellipse']
@@ -59,14 +60,27 @@ sorted_times = sorted(times.values())
 for func_name, t in zip(function_names, sorted_times):
     print(func_name, t)
 
-skip_functions += function_names[-10:]
-bigim_uint8 = data.binary_blobs(length=4000,
+skip_functions += function_names[-4:]
+bigim_uint8 = data.binary_blobs(length=l2,
                     volume_fraction=0.3).astype(np.uint8)
-times = run_benchmark(bigim_uint8, skip_functions=skip_functions)
-function_names = sorted(times, key=times.get)
-sorted_times = sorted(times.values())
+times_long = run_benchmark(bigim_uint8, skip_functions=skip_functions)
+function_names = sorted(times_long, key=times.get)
+sorted_times = sorted(times_long.values())
 
 for func_name, t in zip(function_names, sorted_times):
     print(func_name, t)
 
 
+all_times = {}
+
+for key in times.keys():
+    if key in times_long.keys():
+    	all_times[key] = (times[key], times_long[key])
+    else:
+    	all_times[key] = (times[key], np.nan)
+
+
+df = pd.DataFrame.from_dict(all_times, orient='index')
+df = df.sort_values(by=['0'])
+
+df.to_csv('times.csv')
