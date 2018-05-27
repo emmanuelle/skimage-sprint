@@ -81,6 +81,6 @@ for key in times.keys():
 
 
 df = pd.DataFrame.from_dict(all_times, orient='index')
-df = df.sort_values(by=['0'])
+df = df.sort_values(by=0)
 
 df.to_csv('times.csv')
