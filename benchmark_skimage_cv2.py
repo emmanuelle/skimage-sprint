@@ -7,6 +7,9 @@ import pandas as pd
 import cv2
 import time
 
+###this python script returns a csv of function runtimes
+
+
 skimagefunctions = []
 skimagefuncdict={}
 for submodule in [exposure, feature, filters, measure, morphology,
@@ -16,19 +19,16 @@ for x, y in skimagefunctions:
     skimagefuncdict[x]=y
 
 def run_benchmark(img):
-    print('image dimensions are {} by {}'.format(np.shape(img)[0], np.shape(img)[1]))
-    results=[]
+    results={}
     for function in (benchmark_adjust_gamma, benchmark_adjust_log, \
-                        benchmark_CLAHE, benchmark_equalize_hist, \
-                        benchmark_canny, benchmark_corner_harris):
-        skimagetime, cv2time = function(img)
-        results += [[function.__code__.co_name[10:], skimagetime, cv2time]]
-        print('\tfor function {}'.format(function.__code__.co_name[10:]))
-        print('\t\tskimage takes {} sec to run'.format(skimagetime))
-        print('\t\tcv2 takes {} sec ot run'.format(cv2time))
-        print()
+                    benchmark_CLAHE, benchmark_equalize_hist, benchmark_CLAHE, \
+                    benchmark_corner_harris):
 
-    return [np.shape(img), results]
+        skimagetime, cv2time = function(img)
+        results[function.__code__.co_name[10:]] = \
+            {'scikit-image_time_(sec)':skimagetime, 'opencv_time_(sec)':cv2time}
+
+    return results
 
 def benchmark_adjust_gamma(img):
     gamma = 2
@@ -135,13 +135,18 @@ def benchmark_corner_harris(img):
 
     return (skimagetime, cv2time)
 
+tabresults={}
 im_uint8_1 = data.camera()
-run_benchmark(im_uint8_1)
-
+tabresults['512by512'] = run_benchmark(im_uint8_1)
 im_uint8_2 = np.vstack([np.hstack([data.camera(), data.camera()]), \
-                np.hstack([data.camera(), data.camera()])])
-run_benchmark(im_uint8_2)
-
+            np.hstack([data.camera(), data.camera()])])
+tabresults['1024by1024'] = run_benchmark(im_uint8_2)
 im_uint8_3 = np.vstack([np.hstack([im_uint8_2, im_uint8_2]), \
-                np.hstack([im_uint8_2, im_uint8_2])])
-run_benchmark(im_uint8_3)
+            np.hstack([im_uint8_2, im_uint8_2])])
+tabresults['2048by2048'] = run_benchmark(im_uint8_3)
+
+df=pd.DataFrame.from_dict({(i,j): tabresults[i][j]
+                           for i in tabresults.keys()
+                           for j in tabresults[i].keys()},
+                       orient='index')
+df.to_csv('skimage_cv2_times.csv')
