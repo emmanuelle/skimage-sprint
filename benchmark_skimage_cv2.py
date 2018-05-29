@@ -20,7 +20,7 @@ def run_benchmark(img):
     results=[]
     for function in (benchmark_adjust_gamma, benchmark_adjust_log, \
                         benchmark_CLAHE, benchmark_equalize_hist, \
-                        benchmark_CLAHE, benchmark_corner_harris):
+                        benchmark_canny, benchmark_corner_harris):
         skimagetime, cv2time = function(img)
         results += [[function.__code__.co_name[10:], skimagetime, cv2time]]
         print('\tfor function {}'.format(function.__code__.co_name[10:]))
